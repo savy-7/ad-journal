@@ -74,7 +74,7 @@ export function EntryColumn({
           )}
         </Field>
 
-        <Field label="A little thing you loved" emoji="🧸">
+        <Field label="Something productive you did" emoji="💪">
           {isOwner ? (
             <Input name="little_thing" defaultValue={entry?.little_thing ?? ""} disabled={pending} />
           ) : (

@@ -4,7 +4,7 @@
 
 ## What this project is
 
-A private, date-based shared diary for two people, Amatulla and Divy. Each date is one "page," split into two columns — one per person — with a highlight, a little thing loved, something that made them smile, a mood slider, an "on my mind" note, and a photo. Plus a calendar view and a "random memory" feature. Full spec lives in the original project brief; this file only covers the technical stack.
+A private, date-based shared diary for two people, Amatulla and Divy. Each date is one "page," split into two columns — one per person — with a highlight, something productive they did (gym, chores, work — anything), something that made them smile, a mood slider, an "on my mind" note, and a photo. Plus a calendar view and a "random memory" feature. Full spec lives in the original project brief; this file only covers the technical stack.
 
 ## Stack
 
