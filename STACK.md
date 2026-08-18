@@ -50,7 +50,14 @@ Tested together in a clean install with zero conflicts and a successful producti
 
 ## Design palette
 
-Warm cream / beige background, soft lavender + muted green accents, subtle pastels. Mature and elegant — no hearts, no childish romance styling, no overly pink design.
+Warm cream / beige background, soft lavender + muted green accents, subtle pastels — as a base. Playful and warm, not corporate: emoji and small icon accents throughout (mood emoji, teddy bear 🧸, hearts, sparkles), small delight animations (save confetti/sparkle burst, hover micro-interactions, gentle entrance motion), not just a bare form. Four selectable color palettes (all the same warm-pastel "type," different hues), switchable in the header and remembered per browser via `localStorage`:
+
+1. **Cream & Lavender** (default) — warm cream bg, muted lavender primary, muted green secondary.
+2. **Sage & Clay** — soft sage bg, warm terracotta primary, sage green secondary.
+3. **Blush & Plum** — warm blush bg, deep plum primary, dusty rose secondary.
+4. **Honey & Rosewood** — warm honey bg, rosewood primary, moss green secondary.
+
+*(Superseded 2026-08-19: earlier said "mature and elegant — no hearts, no childish romance styling, no overly pink design." The user explicitly asked for teddy emoji and playful styling; this replaces that line.)*
 
 ## Decisions & gotchas — read before building
 
@@ -61,6 +68,8 @@ Warm cream / beige background, soft lavender + muted green accents, subtle paste
 - **Vercel free tier:** 100GB bandwidth, 1M function calls/month, personal/non-commercial use only — fine for this app.
 - **Compress photos client-side before upload** (resize to ~1600px on the long edge, convert to WebP) to keep comfortably inside free-tier storage for years of daily use.
 - **`@supabase/ssr` is still pre-1.0** — expect minor API refinements over time. It's still the correct package to use.
+- **Next.js 16 renamed `middleware.ts` to `proxy.ts`** (function export renamed `middleware` → `proxy`); the old convention now builds with a deprecation warning. Use `proxy.ts`.
+- **Mood scale:** integer 1–5, `smallint` in the DB. Each of the 5 values is paired with a fixed emoji + short label (not a bare number) — defined once in the mood slider component. Value changes animate subtly with Motion.
 
 ## Build roadmap
 
