@@ -2,9 +2,12 @@
 
 import { useActionState } from "react";
 import { motion } from "motion/react";
+import { Playfair_Display } from "next/font/google";
 import { login, type LoginState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+const playfair = Playfair_Display({ subsets: ["latin"], weight: ["700"] });
 
 const initialState: LoginState = { error: null };
 
@@ -40,19 +43,20 @@ export default function LoginPage() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm"
       >
-        <h1 className="flex items-center gap-2 font-heading text-2xl text-foreground">
+        <div className="flex flex-col items-center gap-1 text-center">
           <motion.span
             animate={{ rotate: [0, -10, 10, -6, 0] }}
             transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
-            className="inline-block"
+            className="inline-block text-3xl"
           >
-            🧸
+            📖
           </motion.span>
-          AD Journal
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          A shared page for the two of you 💛
-        </p>
+          <h1
+            className={`${playfair.className} text-4xl font-bold tracking-tight text-foreground`}
+          >
+            AD Journal
+          </h1>
+        </div>
 
         <form action={formAction} className="mt-8 space-y-4">
           <div className="space-y-1.5">
