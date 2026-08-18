@@ -4,9 +4,9 @@
 -- you want typed into the login page instead of an email).
 
 insert into public.profiles (id, role, display_name, username)
-select id, 'amatulla', 'Amatulla', 'amatulla' from auth.users where email = 'amatulla@example.com'
+select id, 'amatulla', 'Amatulla', 'superwoman' from auth.users where email = 'amatullajaliwala.522965@gmail.com'
 on conflict (id) do update set role = excluded.role, display_name = excluded.display_name, username = excluded.username;
 
 insert into public.profiles (id, role, display_name, username)
-select id, 'divy', 'Divy', 'divy' from auth.users where email = 'divy@example.com'
+select id, 'divy', 'Divy', 'divi' from auth.users where email = 'saraswat.divy@gmail.com'
 on conflict (id) do update set role = excluded.role, display_name = excluded.display_name, username = excluded.username;
