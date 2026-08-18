@@ -60,14 +60,14 @@ export default function LoginPage() {
 
         <form action={formAction} className="mt-8 space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="email" className="text-sm text-foreground">
-              Email
+            <label htmlFor="username" className="text-sm text-foreground">
+              Username
             </label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
+              id="username"
+              name="username"
+              type="text"
+              autoComplete="username"
               required
               disabled={pending}
             />

@@ -62,6 +62,7 @@ Warm cream / beige background, soft lavender + muted green accents, subtle paste
 ## Decisions & gotchas — read before building
 
 - **Auth:** two seeded Supabase accounts (Amatulla, Divy), not a shared passcode. Row Level Security enforces "each person can only write their own entries" at the database level.
+- **Login is by username, not email.** Supabase Auth itself still only knows email/password — accounts are still created with a real email in Authentication → Users. The login page collects a username, which `public.get_email_for_username()` (a `SECURITY DEFINER` SQL function, see `supabase/schema.sql`) resolves to the real email server-side before calling `signInWithPassword()`. This avoids ever needing the `service_role` key in the app. Usernames live in `profiles.username`, set via `supabase/seed_profiles.sql`.
 - **Never use `getSession()` for authorization checks.** It reads the cookie without verifying it against the auth server. Use `getClaims()` or `getUser()` instead for anything that gates access.
 - **Env vars:** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (current naming — older tutorials say "anon key," same thing).
 - **Supabase free tier:** 500MB database, 50K monthly active users, 5GB egress, up to 2 projects. Free projects auto-pause after 7 days with zero activity — a one-click resume from the dashboard fixes it, not a bug.

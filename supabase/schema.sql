@@ -13,8 +13,13 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   role text not null unique check (role in ('amatulla', 'divy')),
-  display_name text not null
+  display_name text not null,
+  username text
 );
+
+alter table public.profiles add column if not exists username text;
+
+create unique index if not exists profiles_username_key on public.profiles (lower(username));
 
 alter table public.profiles enable row level security;
 
@@ -23,6 +28,30 @@ create policy "profiles_select_shared"
   on public.profiles for select
   to authenticated
   using (true);
+
+-- ── username login ─────────────────────────────────────────────────
+-- Supabase Auth only knows email/password. The login page asks for a
+-- username instead; this function resolves it to the real email
+-- server-side (SECURITY DEFINER lets it read auth.users, which the
+-- anon/authenticated roles can't do directly) so the app never has to
+-- expose email addresses or a service-role key to do the lookup.
+
+create or replace function public.get_email_for_username(p_username text)
+returns text
+language sql
+security definer
+set search_path = public, auth
+stable
+as $$
+  select u.email
+  from public.profiles p
+  join auth.users u on u.id = p.id
+  where lower(p.username) = lower(p_username)
+  limit 1;
+$$;
+
+revoke all on function public.get_email_for_username(text) from public;
+grant execute on function public.get_email_for_username(text) to anon, authenticated;
 
 -- ── entries ─────────────────────────────────────────────────────────
 -- One row per (date, person). Each date "page" is two rows, one per user_id.
