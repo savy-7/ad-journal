@@ -2,12 +2,21 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Sparkles, LogOut } from "lucide-react";
+import { Sparkles, LogOut, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { useGamePresence } from "@/components/games/presence-provider";
 import { signOut, goToRandomMemory } from "@/app/(app)/actions";
 
-export function SiteHeader({ displayName }: { displayName: string }) {
+export function SiteHeader({
+  displayName,
+  partnerName,
+}: {
+  displayName: string;
+  partnerName?: string;
+}) {
+  const { partnerOnline } = useGamePresence();
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -8 }}
@@ -27,11 +36,30 @@ export function SiteHeader({ displayName }: { displayName: string }) {
       </Link>
 
       <div className="flex items-center gap-2">
+        {partnerName && (
+          <span className="hidden items-center gap-1.5 text-sm text-muted-foreground sm:flex">
+            <span
+              className={`size-2 rounded-full ${
+                partnerOnline ? "bg-secondary" : "bg-muted-foreground/30"
+              }`}
+              title={partnerOnline ? `${partnerName} is online` : `${partnerName} is offline`}
+            />
+            {partnerName}
+          </span>
+        )}
+
         <span className="hidden text-sm text-muted-foreground sm:inline">
           👋 {displayName}
         </span>
 
         <ThemeSwitcher />
+
+        <Link href="/play">
+          <Button variant="secondary" size="sm">
+            <Gamepad2 className="size-3.5" />
+            Play
+          </Button>
+        </Link>
 
         <form action={goToRandomMemory.bind(null, undefined)}>
           <Button type="submit" variant="secondary" size="sm">

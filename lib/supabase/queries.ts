@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Entry, Profile } from "@/lib/types";
+import type { Entry, GameSession, Profile } from "@/lib/types";
 
 const PHOTO_BUCKET = "entry-photos";
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
@@ -58,6 +58,35 @@ export async function getRandomMemoryDate(
 
   if (error) throw error;
   return (data as string | null) ?? null;
+}
+
+export async function getGameSession(
+  supabase: SupabaseClient,
+  id: string
+): Promise<GameSession | null> {
+  const { data, error } = await supabase
+    .from("game_sessions")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as GameSession | null;
+}
+
+/** All sessions (any status) the given user is a participant in, most recent first. */
+export async function getMyGameSessions(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<GameSession[]> {
+  const { data, error } = await supabase
+    .from("game_sessions")
+    .select("*")
+    .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+  return data as GameSession[];
 }
 
 export async function getPhotoUrl(
