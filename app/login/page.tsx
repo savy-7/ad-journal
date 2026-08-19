@@ -54,7 +54,7 @@ export default function LoginPage() {
           <h1
             className={`${playfair.className} text-4xl font-bold tracking-tight text-foreground`}
           >
-            Amatulla Journal
+            AD Journal
           </h1>
         </div>
 
