@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getPendingInviteForGuest } from "@/lib/supabase/queries";
 import type { GameSession } from "@/lib/types";
 import { InviteToast } from "@/components/games/invite-toast";
 
@@ -31,6 +32,17 @@ export function GamePresenceProvider({
 
   useEffect(() => {
     const supabase = createClient();
+
+    // Postgres Changes is push-only and doesn't replay events missed while a
+    // tab is backgrounded or the socket briefly drops, so the live subscription
+    // below is backed up by a direct catch-up query — run whenever the channel
+    // (re)connects and whenever the tab regains focus.
+    async function checkForPendingInvite() {
+      const invite = await getPendingInviteForGuest(supabase, meId);
+      setPendingInvite(invite);
+    }
+
+    checkForPendingInvite();
 
     const channel = supabase.channel("app-presence", {
       config: {
@@ -75,10 +87,17 @@ export function GamePresenceProvider({
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await channel.track({ online_at: new Date().toISOString() });
+          checkForPendingInvite();
         }
       });
 
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") checkForPendingInvite();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       supabase.removeChannel(channel);
     };
   }, [meId, partnerId]);

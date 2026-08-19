@@ -264,6 +264,10 @@ security invoker
 as $$
 declare
   v_session public.game_sessions;
+  v_board jsonb;
+  v_idx int;
+  v_mark text;
+  v_other uuid;
 begin
   select * into v_session from public.game_sessions where id = p_session_id for update;
 
@@ -277,7 +281,30 @@ begin
     raise exception 'not a participant';
   end if;
 
-  raise exception 'game_type % not yet supported by game_make_move', v_session.game_type;
+  v_other := case when v_session.host_id = auth.uid() then v_session.guest_id else v_session.host_id end;
+
+  if v_session.game_type = 'tic_tac_toe' then
+    if v_session.turn <> auth.uid() then
+      raise exception 'not your turn';
+    end if;
+    v_idx := (p_payload->>'index')::int;
+    if v_idx < 0 or v_idx > 8 then
+      raise exception 'invalid index';
+    end if;
+    v_board := coalesce(v_session.state->'board', to_jsonb(array_fill(null::text, array[9])));
+    if v_board->v_idx <> 'null'::jsonb then
+      raise exception 'cell occupied';
+    end if;
+    v_mark := case when v_session.host_id = auth.uid() then 'X' else 'O' end;
+    v_board := jsonb_set(v_board, array[v_idx::text], to_jsonb(v_mark));
+    update public.game_sessions
+      set state = jsonb_set(state, '{board}', v_board), turn = v_other
+      where id = p_session_id returning * into v_session;
+
+  else
+    raise exception 'game_type % not yet supported by game_make_move', v_session.game_type;
+  end if;
+
   return v_session;
 end;
 $$;

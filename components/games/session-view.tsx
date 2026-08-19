@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getGameDefinition } from "@/lib/games/registry";
 import { respondToInvite, cancelInvite } from "@/app/(app)/play/actions";
 import { Button } from "@/components/ui/button";
+import { TicTacToeBoard } from "@/components/games/tic-tac-toe-board";
 import type { GameSession } from "@/lib/types";
 
 export function SessionView({
@@ -77,10 +78,16 @@ export function SessionView({
     );
   }
 
+  if (session.status === "active" && session.game_type === "tic_tac_toe") {
+    return (
+      <TicTacToeBoard session={session} meId={meId} hostName={hostName} guestName={guestName} />
+    );
+  }
+
   if (session.status === "active") {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-muted-foreground">
-        {game.label} board coming in the next phase — the invite/join pipeline itself is working
+        {game.label} board coming in a future phase — the invite/join pipeline itself is working
         if you can see this. 🧸
       </div>
     );
@@ -94,9 +101,16 @@ export function SessionView({
     );
   }
 
+  const winnerName =
+    session.winner_id === session.host_id
+      ? hostName
+      : session.winner_id === session.guest_id
+        ? guestName
+        : null;
+
   return (
     <div className="rounded-2xl border border-border bg-card p-6 text-center text-foreground">
-      Game over! {session.winner_id ? "🏆 We have a winner." : "It's a draw."}
+      Game over! {winnerName ? `🏆 ${winnerName} won!` : "It's a draw 🤝"}
     </div>
   );
 }

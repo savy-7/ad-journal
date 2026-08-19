@@ -89,6 +89,26 @@ export async function getMyGameSessions(
   return data as GameSession[];
 }
 
+/** Most recent still-pending invite addressed to this user, if any — used as a
+ * direct-query catch-up check alongside the realtime push subscription, since
+ * Postgres Changes doesn't replay events missed while disconnected/backgrounded. */
+export async function getPendingInviteForGuest(
+  supabase: SupabaseClient,
+  guestId: string
+): Promise<GameSession | null> {
+  const { data, error } = await supabase
+    .from("game_sessions")
+    .select("*")
+    .eq("guest_id", guestId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as GameSession | null;
+}
+
 export async function getPhotoUrl(
   supabase: SupabaseClient,
   path: string | null
