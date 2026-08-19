@@ -6,6 +6,7 @@ import { getProfiles, getEntriesForDate, getPhotoUrl } from "@/lib/supabase/quer
 import { isValidDateKey, formatLongDate, addDaysToKey } from "@/lib/date";
 import { EntryColumn } from "@/components/day/entry-column";
 import { SurpriseBanner } from "@/components/day/surprise-banner";
+import { NotebookBackground } from "@/components/day/notebook-background";
 import { Button } from "@/components/ui/button";
 
 export default async function DayPage({
@@ -39,6 +40,7 @@ export default async function DayPage({
 
   return (
     <div>
+      <NotebookBackground />
       {surprise === "1" && <SurpriseBanner />}
 
       <div className="mb-6 flex items-center justify-between">

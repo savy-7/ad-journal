@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { motion } from "motion/react";
+import { Pencil } from "lucide-react";
 import { saveEntry, type SaveEntryState } from "@/app/(app)/day/[date]/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,14 +30,23 @@ export function EntryColumn({
 }) {
   const [state, formAction, pending] = useActionState(saveEntry, initialState);
 
+  // No entry yet → start straight in edit mode. Already saved → start read-only,
+  // with the pencil toggling into edit mode.
+  const [isEditing, setIsEditing] = useState(() => entry === null);
+
   // Derived-during-render pattern (see react.dev/learn/you-might-not-need-an-effect#adjusting-state-based-on-a-prop-change):
-  // bump saveToken whenever a new "saved" result arrives, without an effect.
+  // bump saveToken and flip back to read-only whenever a new "saved" result arrives, without an effect.
   const [prevState, setPrevState] = useState(state);
   const [saveToken, setSaveToken] = useState(0);
   if (state !== prevState) {
     setPrevState(state);
-    if (state.status === "saved") setSaveToken((t) => t + 1);
+    if (state.status === "saved") {
+      setSaveToken((t) => t + 1);
+      setIsEditing(false);
+    }
   }
+
+  const canEdit = isOwner && isEditing;
 
   return (
     <motion.div
@@ -51,23 +61,40 @@ export function EntryColumn({
           <span className="mr-1.5">💛</span>
           {displayName}
         </h2>
-        {entry?.updated_at && (
-          <span className="text-xs text-muted-foreground/70">
-            Last saved {new Date(entry.updated_at).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {entry?.updated_at && (
+            <span className="text-xs text-muted-foreground/70">
+              Last saved {new Date(entry.updated_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          )}
+          {isOwner && entry !== null && (
+            <motion.button
+              type="button"
+              onClick={() => setIsEditing((e) => !e)}
+              whileTap={{ scale: 0.9 }}
+              aria-label={isEditing ? "Cancel editing" : "Edit entry"}
+              className={`flex size-6 items-center justify-center rounded-lg transition-colors ${
+                isEditing
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <Pencil className="size-3.5" />
+            </motion.button>
+          )}
+        </div>
       </div>
 
       <form action={formAction} className="space-y-5">
         <input type="hidden" name="entry_date" value={dateKey} />
 
-        <PhotoUpload existingUrl={photoUrl} disabled={!isOwner} />
+        <PhotoUpload existingUrl={photoUrl} disabled={!canEdit} />
 
         <Field label="Today's highlight" emoji="✨">
-          {isOwner ? (
+          {canEdit ? (
             <Input name="highlight" defaultValue={entry?.highlight ?? ""} disabled={pending} />
           ) : (
             <Static value={entry?.highlight} />
@@ -75,7 +102,7 @@ export function EntryColumn({
         </Field>
 
         <Field label="Something productive you did" emoji="💪">
-          {isOwner ? (
+          {canEdit ? (
             <Input name="little_thing" defaultValue={entry?.little_thing ?? ""} disabled={pending} />
           ) : (
             <Static value={entry?.little_thing} />
@@ -83,7 +110,7 @@ export function EntryColumn({
         </Field>
 
         <Field label="Something that made you smile" emoji="😄">
-          {isOwner ? (
+          {canEdit ? (
             <Input name="smile_thing" defaultValue={entry?.smile_thing ?? ""} disabled={pending} />
           ) : (
             <Static value={entry?.smile_thing} />
@@ -91,7 +118,7 @@ export function EntryColumn({
         </Field>
 
         <Field label="Mood" emoji="🎭">
-          {isOwner ? (
+          {canEdit ? (
             <MoodSlider defaultValue={entry?.mood ?? null} disabled={pending} />
           ) : (
             <Static value={getMoodLevel(entry?.mood)?.label} prefix={getMoodLevel(entry?.mood)?.emoji} />
@@ -99,7 +126,7 @@ export function EntryColumn({
         </Field>
 
         <Field label="On my mind" emoji="💭">
-          {isOwner ? (
+          {canEdit ? (
             <Textarea
               name="on_my_mind"
               rows={3}
@@ -111,33 +138,35 @@ export function EntryColumn({
           )}
         </Field>
 
-        {isOwner && (
-          <div className="relative flex items-center gap-3 pt-1">
-            <ConfettiBurst seed={saveToken} />
+        <div className="relative">
+          {canEdit && (
+            <div className="flex items-center gap-3 pt-1">
+              <motion.div whileTap={{ scale: 0.94 }}>
+                <Button type="submit" disabled={pending}>
+                  {pending ? "Saving…" : "Save"}
+                </Button>
+              </motion.div>
 
-            <motion.div whileTap={{ scale: 0.94 }}>
-              <Button type="submit" disabled={pending}>
-                {pending ? "Saving…" : "Save"}
-              </Button>
-            </motion.div>
+              {state.status === "error" && (
+                <span className="text-sm text-destructive">{state.message}</span>
+              )}
+            </div>
+          )}
 
-            {saveToken > 0 && (
-              <motion.span
-                key={saveToken}
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: [0, 1, 1, 0], x: 0 }}
-                transition={{ duration: 1.8, times: [0, 0.15, 0.85, 1] }}
-                className="text-sm text-secondary-foreground"
-              >
-                Saved! 🧸✨
-              </motion.span>
-            )}
+          <ConfettiBurst seed={saveToken} />
 
-            {state.status === "error" && (
-              <span className="text-sm text-destructive">{state.message}</span>
-            )}
-          </div>
-        )}
+          {!isEditing && saveToken > 0 && (
+            <motion.span
+              key={saveToken}
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: [0, 1, 1, 0], x: 0 }}
+              transition={{ duration: 1.8, times: [0, 0.15, 0.85, 1] }}
+              className="block text-sm text-secondary-foreground"
+            >
+              Saved! 🧸✨
+            </motion.span>
+          )}
+        </div>
       </form>
     </motion.div>
   );
