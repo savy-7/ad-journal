@@ -24,17 +24,23 @@ export function TicTacToeBoard({
 
   // Both clients independently compute the outcome from the synced board and
   // race to record it via the compare-and-swap game_finish RPC — whichever
-  // call lands first wins, the second is a harmless no-op.
+  // call lands first wins, the second is a harmless no-op. Supabase's query
+  // builders are lazy thenables: constructing `.rpc(...)` without awaiting
+  // or chaining `.then()` never actually dispatches the request — verified
+  // directly against the installed library (fetch is never called unless the
+  // builder is consumed). That was the actual bug behind games never ending;
+  // the `void (async () => {...})()` below exists specifically to force that.
   useEffect(() => {
     if (session.status !== "active") return;
-    const supabase = createClient();
     const winner = checkWinner(board);
-    if (winner) {
-      const winnerId = winner.mark === "X" ? session.host_id : session.guest_id;
-      supabase.rpc("game_finish", { p_session_id: session.id, p_winner_id: winnerId });
-    } else if (isDraw(board)) {
-      supabase.rpc("game_finish", { p_session_id: session.id, p_winner_id: null });
-    }
+    const drawn = !winner && isDraw(board);
+    if (!winner && !drawn) return;
+
+    const winnerId = winner ? (winner.mark === "X" ? session.host_id : session.guest_id) : null;
+    const supabase = createClient();
+    void (async () => {
+      await supabase.rpc("game_finish", { p_session_id: session.id, p_winner_id: winnerId });
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 

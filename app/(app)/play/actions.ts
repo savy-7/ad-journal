@@ -76,3 +76,15 @@ export async function cancelInvite(sessionId: string) {
   if (error) throw error;
   revalidatePath("/play");
 }
+
+/** Ends an in-progress game early (forfeit/leave), so it stops blocking a fresh
+ * invite of the same game type. Reuses game_finish with no winner — same as a draw. */
+export async function leaveGame(sessionId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("game_finish", {
+    p_session_id: sessionId,
+    p_winner_id: null,
+  });
+  if (error) throw error;
+  revalidatePath("/play");
+}

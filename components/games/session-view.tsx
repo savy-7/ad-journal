@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getGameDefinition } from "@/lib/games/registry";
-import { respondToInvite, cancelInvite } from "@/app/(app)/play/actions";
+import { respondToInvite, cancelInvite, leaveGame, createInvite } from "@/app/(app)/play/actions";
 import { Button } from "@/components/ui/button";
 import { TicTacToeBoard } from "@/components/games/tic-tac-toe-board";
 import type { GameSession } from "@/lib/types";
@@ -78,17 +79,25 @@ export function SessionView({
     );
   }
 
-  if (session.status === "active" && session.game_type === "tic_tac_toe") {
-    return (
-      <TicTacToeBoard session={session} meId={meId} hostName={hostName} guestName={guestName} />
-    );
-  }
-
   if (session.status === "active") {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-muted-foreground">
-        {game.label} board coming in a future phase — the invite/join pipeline itself is working
-        if you can see this. 🧸
+      <div>
+        {session.game_type === "tic_tac_toe" ? (
+          <TicTacToeBoard session={session} meId={meId} hostName={hostName} guestName={guestName} />
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-muted-foreground">
+            {game.label} board coming in a future phase — the invite/join pipeline itself is
+            working if you can see this. 🧸
+          </div>
+        )}
+
+        <div className="mt-4 text-center">
+          <form action={leaveGame.bind(null, session.id)}>
+            <Button type="submit" variant="ghost" size="sm">
+              Leave game
+            </Button>
+          </form>
+        </div>
       </div>
     );
   }
@@ -96,7 +105,12 @@ export function SessionView({
   if (session.status === "declined" || session.status === "cancelled") {
     return (
       <div className="rounded-2xl border border-border bg-card p-6 text-center text-muted-foreground">
-        This invite was {session.status}.
+        <p>This invite was {session.status}.</p>
+        <Link href="/play" className="mt-4 inline-block">
+          <Button variant="outline" size="sm">
+            Back to Play
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -110,7 +124,15 @@ export function SessionView({
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 text-center text-foreground">
-      Game over! {winnerName ? `🏆 ${winnerName} won!` : "It's a draw 🤝"}
+      <p>Game over! {winnerName ? `🏆 ${winnerName} won!` : "It's a draw 🤝"}</p>
+      <div className="mt-4 flex justify-center gap-3">
+        <form action={createInvite.bind(null, session.game_type)}>
+          <Button type="submit">Play again 🔄</Button>
+        </form>
+        <Link href="/play">
+          <Button variant="outline">Back to Play</Button>
+        </Link>
+      </div>
     </div>
   );
 }
