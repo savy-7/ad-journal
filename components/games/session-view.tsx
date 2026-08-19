@@ -7,6 +7,7 @@ import { getGameDefinition } from "@/lib/games/registry";
 import { respondToInvite, cancelInvite, leaveGame, createInvite } from "@/app/(app)/play/actions";
 import { Button } from "@/components/ui/button";
 import { TicTacToeBoard } from "@/components/games/tic-tac-toe-board";
+import { DoodleGuessBoard } from "@/components/games/doodle-guess-board";
 import type { GameSession } from "@/lib/types";
 
 export function SessionView({
@@ -84,6 +85,8 @@ export function SessionView({
       <div>
         {session.game_type === "tic_tac_toe" ? (
           <TicTacToeBoard session={session} meId={meId} hostName={hostName} guestName={guestName} />
+        ) : session.game_type === "doodle_guess" ? (
+          <DoodleGuessBoard session={session} meId={meId} hostName={hostName} guestName={guestName} />
         ) : (
           <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-muted-foreground">
             {game.label} board coming in a future phase — the invite/join pipeline itself is

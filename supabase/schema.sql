@@ -268,6 +268,12 @@ declare
   v_idx int;
   v_mark text;
   v_other uuid;
+  v_round int;
+  v_scores jsonb;
+  v_guesser_key text;
+  v_new_score int;
+  v_host_score int;
+  v_guest_score int;
 begin
   select * into v_session from public.game_sessions where id = p_session_id for update;
 
@@ -300,6 +306,45 @@ begin
     update public.game_sessions
       set state = jsonb_set(state, '{board}', v_board), turn = v_other
       where id = p_session_id returning * into v_session;
+
+  elsif v_session.game_type = 'doodle_guess' then
+    -- The secret word is never stored here — it's a pure function of
+    -- (session id, round) computed independently by each client (see
+    -- lib/games/doodle-guess.ts). This RPC only ever hears "that guess was
+    -- correct" from the guesser's own client and advances state accordingly;
+    -- it never receives or validates the guess text itself.
+    if auth.uid() = v_session.turn then
+      raise exception 'the drawer cannot submit a guess';
+    end if;
+    if (p_payload->>'action') is distinct from 'correct' then
+      raise exception 'invalid action';
+    end if;
+
+    v_round := coalesce((v_session.state->>'round')::int, 1);
+    v_scores := coalesce(v_session.state->'scores', '{}'::jsonb);
+    v_guesser_key := auth.uid()::text;
+    v_new_score := coalesce((v_scores->>v_guesser_key)::int, 0) + 1;
+    v_scores := jsonb_set(v_scores, array[v_guesser_key], to_jsonb(v_new_score));
+
+    if v_round >= 6 then -- must match DOODLE_ROUNDS in lib/games/doodle-guess.ts
+      v_host_score := coalesce((v_scores->>v_session.host_id::text)::int, 0);
+      v_guest_score := coalesce((v_scores->>v_session.guest_id::text)::int, 0);
+      update public.game_sessions
+        set state = jsonb_build_object('round', v_round, 'scores', v_scores),
+            status = 'finished',
+            turn = null,
+            winner_id = case
+              when v_host_score > v_guest_score then v_session.host_id
+              when v_guest_score > v_host_score then v_session.guest_id
+              else null
+            end
+        where id = p_session_id returning * into v_session;
+    else
+      update public.game_sessions
+        set state = jsonb_build_object('round', v_round + 1, 'scores', v_scores),
+            turn = auth.uid()
+        where id = p_session_id returning * into v_session;
+    end if;
 
   else
     raise exception 'game_type % not yet supported by game_make_move', v_session.game_type;
