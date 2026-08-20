@@ -61,7 +61,7 @@ export default function LoginPage() {
         <form action={formAction} className="mt-8 space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="username" className="text-sm text-foreground">
-              Username
+              Username:
             </label>
             <Input
               id="username"
